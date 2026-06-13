@@ -12,3 +12,11 @@ export interface HistoryEntry {
   correct: boolean
   timestamp: number
 }
+
+export interface PracticePreset {
+  id: string
+  name: string
+  wpm: number
+  frequency: number
+  volume: number
+}

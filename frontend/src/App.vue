@@ -55,18 +55,55 @@
     </div>
 
     <!-- Settings -->
-    <div class="bg-gray-900 rounded-xl p-4 grid grid-cols-3 gap-4">
-      <div>
-        <label class="text-gray-400 text-sm">速度 (WPM): {{ store.wpm }}</label>
-        <input type="range" v-model.number="store.wpm" min="5" max="40" class="w-full" />
+    <div class="bg-gray-900 rounded-xl p-4 flex flex-col gap-4">
+      <div class="grid grid-cols-3 gap-4">
+        <div>
+          <label class="text-gray-400 text-sm">速度 (WPM): {{ store.wpm }}</label>
+          <input type="range" v-model.number="store.wpm" min="5" max="40" class="w-full" />
+        </div>
+        <div>
+          <label class="text-gray-400 text-sm">频率 (Hz): {{ store.frequency }}</label>
+          <input type="range" v-model.number="store.frequency" min="300" max="1200" class="w-full" />
+        </div>
+        <div>
+          <label class="text-gray-400 text-sm">音量: {{ store.volume.toFixed(1) }}</label>
+          <input type="range" v-model.number="store.volume" min="0" max="1" step="0.1" class="w-full" />
+        </div>
       </div>
-      <div>
-        <label class="text-gray-400 text-sm">频率 (Hz): {{ store.frequency }}</label>
-        <input type="range" v-model.number="store.frequency" min="300" max="1200" class="w-full" />
-      </div>
-      <div>
-        <label class="text-gray-400 text-sm">音量: {{ store.volume.toFixed(1) }}</label>
-        <input type="range" v-model.number="store.volume" min="0" max="1" step="0.1" class="w-full" />
+
+      <div class="border-t border-gray-700 pt-4">
+        <div class="flex justify-between items-center mb-3">
+          <h3 class="text-amber-300 font-bold text-sm">练习预设</h3>
+          <div class="flex gap-2">
+            <input v-model="newPresetName" @keyup.enter="handleSavePreset"
+              class="bg-gray-800 rounded px-3 py-1 text-sm w-32" placeholder="预设名称" />
+            <button @click="handleSavePreset"
+              class="bg-amber-500 text-black px-3 py-1 rounded text-sm hover:bg-amber-400">
+              保存当前
+            </button>
+          </div>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <button v-for="preset in store.presets" :key="preset.id"
+            @click="store.applyPreset(preset.id)"
+            class="group relative px-3 py-2 rounded text-sm transition-colors"
+            :class="store.activePresetId === preset.id
+              ? 'bg-amber-500 text-black'
+              : 'bg-gray-800 text-gray-300 hover:bg-gray-700'">
+            <span class="font-medium">{{ preset.name }}</span>
+            <span class="text-xs opacity-70 ml-2">
+              {{ preset.wpm }} WPM · {{ preset.frequency }} Hz
+            </span>
+            <button @click.stop="store.deletePreset(preset.id)"
+              class="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 text-white text-xs
+                     opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+              ×
+            </button>
+          </button>
+          <div v-if="store.presets.length === 0" class="text-gray-500 text-sm py-2">
+            暂无预设，点击"保存当前"创建第一个预设
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -81,6 +118,15 @@ import TrainingMode from './components/TrainingMode.vue'
 
 const store = useMorseStore()
 const morseTable = MORSE_TABLE
+const newPresetName = ref('')
+
+function handleSavePreset() {
+  if (!newPresetName.value.trim()) {
+    newPresetName.value = '自定义预设'
+  }
+  store.savePreset(newPresetName.value)
+  newPresetName.value = ''
+}
 
 const tabs = [
   { id: 'translate', label: '编码/解码' },

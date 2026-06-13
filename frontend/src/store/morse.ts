@@ -1,7 +1,27 @@
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { defineStore } from 'pinia'
 import { MORSE_TABLE, REVERSE_TABLE, textToMorse, morseToText } from '../utils/morse-code'
-import type { TrainMode, HistoryEntry } from '../types'
+import type { TrainMode, HistoryEntry, PracticePreset } from '../types'
+
+const PRESETS_KEY = 'morse-practice-presets'
+
+function loadPresets(): PracticePreset[] {
+  try {
+    const raw = localStorage.getItem(PRESETS_KEY)
+    if (raw) return JSON.parse(raw)
+  } catch {
+    // ignore
+  }
+  return [
+    { id: 'default-beginner', name: '入门慢速', wpm: 10, frequency: 700, volume: 0.6 },
+    { id: 'default-normal', name: '标准练习', wpm: 20, frequency: 700, volume: 0.6 },
+    { id: 'default-fast', name: '高速挑战', wpm: 30, frequency: 800, volume: 0.7 },
+  ]
+}
+
+function savePresetsToStorage(presets: PracticePreset[]) {
+  localStorage.setItem(PRESETS_KEY, JSON.stringify(presets))
+}
 
 export const useMorseStore = defineStore('morse', () => {
   const inputText = ref('')
@@ -16,6 +36,8 @@ export const useMorseStore = defineStore('morse', () => {
   const userAnswer = ref('')
   const score = ref({ correct: 0, total: 0 })
   const isPlaying = ref(false)
+  const presets = ref<PracticePreset[]>(loadPresets())
+  const activePresetId = ref<string | null>(null)
   let audioCtx: AudioContext | null = null
   let currentOscillator: OscillatorNode | null = null
 
@@ -90,10 +112,54 @@ export const useMorseStore = defineStore('morse', () => {
     history.value = []
   }
 
+  function applyPreset(id: string) {
+    const preset = presets.value.find(p => p.id === id)
+    if (!preset) return
+    wpm.value = preset.wpm
+    frequency.value = preset.frequency
+    volume.value = preset.volume
+    activePresetId.value = id
+  }
+
+  function savePreset(name: string) {
+    const id = 'preset-' + Date.now()
+    const newPreset: PracticePreset = {
+      id,
+      name: name.trim() || '自定义预设',
+      wpm: wpm.value,
+      frequency: frequency.value,
+      volume: volume.value,
+    }
+    presets.value.push(newPreset)
+    activePresetId.value = id
+    savePresetsToStorage(presets.value)
+  }
+
+  function deletePreset(id: string) {
+    const idx = presets.value.findIndex(p => p.id === id)
+    if (idx === -1) return
+    presets.value.splice(idx, 1)
+    if (activePresetId.value === id) {
+      activePresetId.value = null
+    }
+    savePresetsToStorage(presets.value)
+  }
+
+  watch([wpm, frequency, volume], () => {
+    if (!activePresetId.value) return
+    const preset = presets.value.find(p => p.id === activePresetId.value)
+    if (!preset) return
+    if (preset.wpm !== wpm.value || preset.frequency !== frequency.value || preset.volume !== volume.value) {
+      activePresetId.value = null
+    }
+  })
+
   return {
     inputText, morseOutput, decodedText, wpm, frequency, volume,
     trainMode, history, quizChar, userAnswer, score, isPlaying,
+    presets, activePresetId,
     dotDuration, encode, decode, playMorse, playTone,
-    generateQuiz, checkAnswer, resetScore
+    generateQuiz, checkAnswer, resetScore,
+    applyPreset, savePreset, deletePreset,
   }
 })

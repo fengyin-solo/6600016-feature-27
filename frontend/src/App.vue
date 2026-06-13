@@ -84,22 +84,27 @@
           </div>
         </div>
         <div class="flex flex-wrap gap-2">
-          <button v-for="preset in store.presets" :key="preset.id"
-            @click="store.applyPreset(preset.id)"
-            class="group relative px-3 py-2 rounded text-sm transition-colors"
+          <div v-for="preset in store.presets" :key="preset.id"
+            class="flex items-stretch rounded overflow-hidden transition-colors"
             :class="store.activePresetId === preset.id
-              ? 'bg-amber-500 text-black'
-              : 'bg-gray-800 text-gray-300 hover:bg-gray-700'">
-            <span class="font-medium">{{ preset.name }}</span>
-            <span class="text-xs opacity-70 ml-2">
-              {{ preset.wpm }} WPM · {{ preset.frequency }} Hz
-            </span>
-            <button @click.stop="store.deletePreset(preset.id)"
-              class="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 text-white text-xs
-                     opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-              ×
+              ? 'ring-1 ring-amber-400'
+              : 'ring-1 ring-gray-700'">
+            <button @click="store.applyPreset(preset.id)"
+              class="flex flex-col px-3 py-2 text-sm text-left transition-colors"
+              :class="store.activePresetId === preset.id
+                ? 'bg-amber-500 text-black hover:bg-amber-400'
+                : 'bg-gray-800 text-gray-300 hover:bg-gray-700'">
+              <span class="font-medium">{{ preset.name }}</span>
+              <span class="text-xs opacity-70">
+                {{ preset.wpm }} WPM · {{ preset.frequency }} Hz · 音量{{ (preset.volume * 10).toFixed(0) }}
+              </span>
             </button>
-          </button>
+            <button @click="store.deletePreset(preset.id)"
+              class="px-2 bg-gray-700 text-gray-400 hover:bg-red-500 hover:text-white transition-colors flex items-center text-xs"
+              :title="'删除预设：' + preset.name">
+              🗑
+            </button>
+          </div>
           <div v-if="store.presets.length === 0" class="text-gray-500 text-sm py-2">
             暂无预设，点击"保存当前"创建第一个预设
           </div>

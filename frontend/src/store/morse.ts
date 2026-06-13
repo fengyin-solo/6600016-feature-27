@@ -138,9 +138,19 @@ export const useMorseStore = defineStore('morse', () => {
   function deletePreset(id: string) {
     const idx = presets.value.findIndex(p => p.id === id)
     if (idx === -1) return
+    const wasActive = activePresetId.value === id
     presets.value.splice(idx, 1)
-    if (activePresetId.value === id) {
-      activePresetId.value = null
+    if (wasActive) {
+      if (presets.value.length > 0) {
+        const neighborIdx = Math.min(idx, presets.value.length - 1)
+        const neighbor = presets.value[neighborIdx]
+        wpm.value = neighbor.wpm
+        frequency.value = neighbor.frequency
+        volume.value = neighbor.volume
+        activePresetId.value = neighbor.id
+      } else {
+        activePresetId.value = null
+      }
     }
     savePresetsToStorage(presets.value)
   }
